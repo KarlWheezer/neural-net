@@ -1,69 +1,78 @@
 package app;
-import javax.swing.JFrame;
-import javax.swing.JPanel;
 
 import java.awt.BasicStroke;
 import java.awt.Color;
-import java.awt.Font;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.util.ArrayList;
 
+import javax.swing.JFrame;
+import javax.swing.JPanel;
+
 public class Display extends JPanel {
+   Network network;
    Layer[] layers;
-   JFrame win;
-   int rad = 25;
+   JFrame window;
+   Color gray = new Color(59, 58, 58);
+   Color white = new Color(255, 255, 255);
+   int nodeRad = 50;
 
-   public Display(Layer[] layers) {
-      this.win = new JFrame("Nueral Network");
-      win.setDefaultCloseOperation(3);
-      win.setSize(1920, 1080);
-      win.setBackground(new Color(59, 58, 58));
+   public Display(Network network) {
+      this.network = network;
+      this.layers = network.layers;
+      this.window = new JFrame("Neural Network");
 
-      this.layers = layers;
-      
-      win.setLocationRelativeTo(null);      
-      win.add(this); win.setVisible(true); 
+      this.configureDisplay();
+      window.setVisible(true);
    }
-   
-   public void paint(Graphics g) {
+
+   private void configureDisplay() {
+      window.setSize(1600, 900);
+      window.add(this);
+      window.setDefaultCloseOperation(3);
+      window.setLocationRelativeTo(null);
+      window.setBackground(new Color(59, 58, 58));
+   }
+
+   @Override public void paint(Graphics g) {
       final int width = getWidth();
       final int height = getHeight();
-      ArrayList<int[]> points = new ArrayList<>();
-      ArrayList<String> biases = new ArrayList<>();      
-
-
       Graphics2D g2 = (Graphics2D) g;
-      g2.setColor(new Color(67, 224, 120));
       g2.setStroke(new BasicStroke(5));
 
-      for (int i = 0; i < layers.length; i ++) {
-         for (int j = 0; j < layers[i].n_outputs; j ++) {
-            int x = width * (1 + i) / (1 + layers.length);
-            int y = height * (1 + j) / (1 + layers[i].n_outputs);
+      ArrayList<int[]> points = new ArrayList<>();
+      g.setColor(new Color(255, 255, 255));
 
-            if (i != 0) for (int a = 0; a < layers[i].n_inputs; a ++) {
-               int prev_x = width * i / (1 + layers.length);
-               int prev_y = height * (1 + a) / (1 + layers[i].n_inputs);
+      for (int i = 0; i < layers[0].n_inputs; i ++) {
+         int x = width  / (2 + layers.length);
+         int y = height * (1 + i) / (1 + layers[0].n_inputs);
 
-               g2.drawLine(x + rad, y + rad, prev_x + rad, prev_y + rad);
+         points.add(new int[] { x, y - (nodeRad / 2)});
+      }
 
-               biases.add(String.format("%.2f", layers[i].biases[j]));
+      for (int line = 0; line < layers.length; line ++) {
+         for (int col = 0; col < layers[line].n_outputs; col ++) {
+            int x = width * (2 + line) / (2 + layers.length);
+            int y = (height * (1 + col) / (1 + layers[line].n_outputs));
+            points.add(new int[] { x, y - (nodeRad / 2) });
+
+            String msg = "Bias: " + App.round(layers[line].biases[col], 3);
+
+            g2.drawString(msg, x, y + - 2 * nodeRad);
+            for (int a = 0; a < layers[line].n_inputs; a ++) {
+               int prev_x = width * (1 + line) / (2 + layers.length);
+               int prev_y = height * (1 + a) / (1 + layers[line].n_inputs);
+
+               g2.drawLine(x + (nodeRad / 2), y, prev_x + (nodeRad / 2), prev_y);
             }
-
-            points.add(new int[] {x, y});
          }
       }
 
-      g.setColor(new Color(28, 28, 28));
-      g.setFont(new Font("Helvetica", 0, 25));
-      for (int i = 0; i < points.size(); i ++) {
-         int[] point = points.get(i);
-         g.setColor(new Color(28, 28, 28));
-         g.fillOval(point[0], point[1], rad * 2, rad * 2);
-
-         g2.setColor(new Color(67, 224, 120));
-         g.drawString(biases.get(i), point[0], point[1]);         
+      for (int[] point: points) {
+         g.setColor(new Color(59, 58, 58));
+         g.fillOval(point[0], point[1], nodeRad, nodeRad);
+         g.setColor(new Color(255, 255, 255));
+         g.drawOval(point[0], point[1], nodeRad, nodeRad);
       }
    }
 }
