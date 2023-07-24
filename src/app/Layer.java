@@ -3,70 +3,85 @@ package app;
 import java.util.Random;
 
 public class Layer {
-   int n_inputs, n_outputs;
-   double[][] weights, weightGradient;
-   double[]   biases,  biasGradient;
+   int i_nodes, o_nodes;
+   double[] node_values;
 
-   public Layer(int n_inputs, int n_outputs) {
-      this.n_inputs = n_inputs;
-      this.n_outputs = n_outputs;
+   double[][] weights, weightGradients;
+   double[] biases, biasGradients;
 
-      weightGradient = new double[n_inputs][n_outputs];
-      biasGradient  = new double[n_outputs];
+   Random random = new Random();
 
-      this.weights = randomizeWeigts();
-      this.biases  = randomizeBiases();
+   public Layer(int inputs, int outputs) {
+      this.i_nodes = inputs; this.o_nodes = outputs;
+
+      this.weights = createWeights();
+      this.biases = createBiases();
+      this.node_values = initializeNodes();
    }
 
-   private double[][] randomizeWeigts() {
-      double[][] n_weights = new double[n_inputs][n_outputs];
-      Random random = new Random();
-
-      for (int oNode = 0; oNode < n_outputs; oNode ++)
-         for (int iNode = 0; iNode < n_inputs; iNode ++)
-            n_weights[iNode][oNode] = random.nextDouble(-1, 1) / Math.sqrt(n_inputs);
+   private double[] initializeNodes() {
+      double[] node_values = new double[o_nodes];
+      for (int o_node = 0 ; o_node < o_nodes; o_node ++)
+         node_values[o_node] = 0;
       
-      return n_weights;
+      return node_values;
+   }
+   
+   private double[][] createWeights() {
+      double[][] weights = new double[i_nodes][o_nodes];
+      double[][] gradients = new double[i_nodes][o_nodes];
+
+      for (int o_node = 0 ; o_node < o_nodes; o_node ++)
+         for (int i_node = 0; i_nodes < i_nodes; o_node ++) {
+            weights[i_node][o_node] = random.nextDouble(-1, 1);
+            gradients[i_node][o_node] = 0;
+         }
+      
+      this.weightGradients = gradients; return weights;
    }
 
-   private double[] randomizeBiases() {
-      double[] n_biases = new double[n_outputs];
-      Random random = new Random();
+   private double[] createBiases() {
+      double[] biases = new double[o_nodes];
+      double[] gradients = new double[o_nodes];
 
-      for (int oNode = 0; oNode < n_outputs; oNode ++)
-         n_biases[oNode] = random.nextDouble(-1, 1) / Math.sqrt(n_inputs);
+      for (int o_node = 0; o_node < o_nodes; o_node ++) {
+         biases[o_node] = random.nextDouble(-1, 1);
+         gradients[o_node] = 0;
+      }
       
-      return n_biases;
+      this.biasGradients = gradients; return biases;
    }
 
    public double[] evaluate(double[] inputs) {
-      double[] outputs = new double[n_outputs];
+      double[] outputs = new double[o_nodes];
       
-      for (int oNode = 0; oNode < n_outputs; oNode ++) {
+      for (int oNode = 0; oNode < o_nodes; oNode ++) {
          double output = biases[oNode];
-         for (int iNode = 0; iNode < n_inputs; iNode ++)
+         for (int iNode = 0; iNode < i_nodes; iNode ++)
             output += inputs[iNode] * weights[iNode][oNode];
-
+         
+         node_values[oNode] = squish(output);
          outputs[oNode] = squish(output);
       }
 
       return outputs;
    }
 
+   private double squish(double value) {
+      return 1 / (1 + Math.exp(-value));
+   }
+
    public double cost(double expected, double predicted) {
       double error = expected - predicted;
       return error * error;
    }
-
-   private double squish(double value) {
-      return 1 / ( 1 + Math.exp(-value));
-   }
-
+   
    public void update(double rate) {
-      for (int oNode = 0; oNode < n_outputs; oNode ++) {
-         biases[oNode] -= biasGradient[oNode] * rate;
-         for (int iNode = 0; iNode < n_inputs; iNode ++)
-            weights[iNode][oNode] -= weightGradient[iNode][oNode] * rate;
+      for (int o_node = 0; o_node < o_nodes; o_node ++) {
+         biases[o_node] -= biasGradients[o_node] * rate;
+         
+         for (int i_node = 0; i_node < i_nodes; i_node ++)
+            weights[i_node][o_node] -= weightGradients[i_node][o_node] * rate;
       }
    }
 }
